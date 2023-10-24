@@ -55,6 +55,8 @@ export type Transaction = {
   execution_node?: AddressParam | null;
   allowed_peekers?: Array<string>;
   wrapped?: Pick<Transaction, WrappedTransactionFields>;
+  near_receipt_hash?: string;
+  near_transaction_hash?: string;
 }
 
 export type TransactionsResponse = TransactionsResponseValidated | TransactionsResponsePending;
