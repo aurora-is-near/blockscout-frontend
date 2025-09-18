@@ -1,12 +1,15 @@
-import { VStack } from '@chakra-ui/react';
+import { Flex, VStack } from '@chakra-ui/react';
 import React from 'react';
 
 import type { Transaction } from 'types/api/transaction';
+import type { ChainConfig } from 'types/multichain';
 
 import config from 'configs/app';
 import { Badge } from 'toolkit/chakra/badge';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
+import ChainIcon from 'ui/optimismSuperchain/components/ChainIcon';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import BlockPendingUpdateHint from 'ui/shared/block/BlockPendingUpdateHint';
 import CurrencyValue from 'ui/shared/CurrencyValue';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
@@ -26,9 +29,10 @@ type Props = {
   enableTimeIncrement?: boolean;
   isLoading?: boolean;
   animation?: string;
+  chainData?: ChainConfig;
 };
 
-const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, isLoading, animation }: Props) => {
+const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, isLoading, animation, chainData }: Props) => {
   const dataTo = tx.to ? tx.to : tx.created_contract;
 
   const getTxStatus = () => {
@@ -41,9 +45,14 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
 
   return (
     <TableRow key={ tx.hash } animation={ animation }>
-      <TableCell pl={ 4 }>
+      <TableCell textAlign="center">
         <TxAdditionalInfo tx={ tx } isLoading={ isLoading }/>
       </TableCell>
+      { chainData && (
+        <TableCell>
+          <ChainIcon data={ chainData } isLoading={ isLoading } my="2px"/>
+        </TableCell>
+      ) }
       <TableCell pr={ 4 }>
         <VStack alignItems="start" lineHeight="24px">
           <TxEntity
@@ -86,15 +95,18 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
       </TableCell>
       { showBlockInfo && (
         <TableCell>
-          { tx.block_number && (
-            <BlockEntity
-              isLoading={ isLoading }
-              number={ tx.block_number }
-              noIcon
-              textStyle="sm"
-              fontWeight={ 500 }
-            />
-          ) }
+          <Flex alignItems="center" gap={ 2 }>
+            { tx.block_number && (
+              <BlockEntity
+                isLoading={ isLoading }
+                number={ tx.block_number }
+                noIcon
+                textStyle="sm"
+                fontWeight={ 500 }
+              />
+            ) }
+            { tx.is_pending_update && <BlockPendingUpdateHint view="tx"/> }
+          </Flex>
         </TableCell>
       ) }
       <TableCell>

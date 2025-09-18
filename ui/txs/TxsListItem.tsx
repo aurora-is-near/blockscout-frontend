@@ -1,11 +1,11 @@
 import {
   HStack,
   Flex,
-
 } from '@chakra-ui/react';
 import React from 'react';
 
 import type { Transaction } from 'types/api/transaction';
+import type { ChainConfig } from 'types/multichain';
 
 import config from 'configs/app';
 import getValueWithUnit from 'lib/getValueWithUnit';
@@ -32,6 +32,7 @@ type Props = {
   enableTimeIncrement?: boolean;
   isLoading?: boolean;
   animation?: string;
+  chainData?: ChainConfig;
 };
 
 const getTxStatus = (tx: Transaction) => {
@@ -42,7 +43,7 @@ const getTxStatus = (tx: Transaction) => {
   }
 };
 
-const TxsListItem = ({ tx, isLoading, showBlockInfo, currentAddress, enableTimeIncrement, animation }: Props) => {
+const TxsListItem = ({ tx, isLoading, showBlockInfo, currentAddress, enableTimeIncrement, animation, chainData }: Props) => {
   const dataTo = tx.to ? tx.to : tx.created_contract;
 
   return (
@@ -69,9 +70,9 @@ const TxsListItem = ({ tx, isLoading, showBlockInfo, currentAddress, enableTimeI
           hash={ tx.hash }
           truncation="constant_long"
           fontWeight="700"
-          icon={{
-            name: tx.transaction_types.includes('blob_transaction') ? 'blob' : undefined,
-          }}
+          icon={ !tx.is_pending_update && tx.transaction_types.includes('blob_transaction') ? { name: 'blob' } : undefined }
+          chain={ chainData }
+          isPendingUpdate={ tx.is_pending_update }
         />
         <TimeWithTooltip
           timestamp={ tx.timestamp }

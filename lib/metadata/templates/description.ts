@@ -26,6 +26,7 @@ const TEMPLATE_MAP: Record<Route['pathname'], string> = {
   '/token/[hash]/instance/[id]': '%hash%, balances and analytics on the %network_title%',
   '/apps': DEFAULT_TEMPLATE,
   '/apps/[id]': DEFAULT_TEMPLATE,
+  '/clusters/[name]': '%cluster_name% cluster | %app_name%',
   '/stats': DEFAULT_TEMPLATE,
   '/stats/[id]': DEFAULT_TEMPLATE,
   '/api-docs': DEFAULT_TEMPLATE,
@@ -65,12 +66,21 @@ const TEMPLATE_MAP: Record<Route['pathname'], string> = {
   '/pools': DEFAULT_TEMPLATE,
   '/pools/[hash]': DEFAULT_TEMPLATE,
   '/interop-messages': DEFAULT_TEMPLATE,
-  '/chain/[chain-slug]/accounts/label/[slug]': DEFAULT_TEMPLATE,
-  '/chain/[chain-slug]/address/[hash]': DEFAULT_TEMPLATE,
-  '/chain/[chain-slug]/block/[height_or_hash]': DEFAULT_TEMPLATE,
-  '/chain/[chain-slug]/tx/[hash]': DEFAULT_TEMPLATE,
   '/operations': DEFAULT_TEMPLATE,
   '/operation/[id]': DEFAULT_TEMPLATE,
+  '/cc/tx/[hash]': DEFAULT_TEMPLATE,
+
+  // multichain routes
+  '/chain/[chain-slug]/accounts/label/[slug]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/advanced-filter': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/block/[height_or_hash]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/block/countdown': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/block/countdown/[height]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/csv-export': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/op/[hash]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/token/[hash]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/token/[hash]/instance/[id]': DEFAULT_TEMPLATE,
+  '/chain/[chain-slug]/tx/[hash]': DEFAULT_TEMPLATE,
 
   // service routes, added only to make typescript happy
   '/login': DEFAULT_TEMPLATE,

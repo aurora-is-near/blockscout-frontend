@@ -14,6 +14,7 @@ on:
             - arbitrum_nova
             - arbitrum_sepolia
             - base
+            - celo
             - celo_alfajores
             - garnet
             - gnosis
@@ -23,6 +24,7 @@ on:
             - filecoin
             - immutable
             - main
+            - mega_eth
             - mekong
             - neon_devnet
             - optimism
@@ -36,10 +38,17 @@ on:
             - stability
             - tac
             - tac_turin
+            - zetachain
+            - zetachain_testnet
             - zkevm
             - zilliqa
             - zksync
             - zora
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
 
 jobs:
   make_slug:
@@ -76,3 +85,4 @@ jobs:
       kubeConfigSecret: ci/data/dev/kubeconfig/k8s-dev
       vaultRole: ci-dev
     secrets: inherit
+    permissions: write-all
