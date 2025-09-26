@@ -11,19 +11,20 @@ interface InjectedProps {
 }
 
 interface Props {
-  type?: 'transaction' | 'token_transfer' | 'deposit' | 'block';
+  type?: 'transaction' | 'token_transfer' | 'deposit' | 'block' | 'flashblock' | 'cross_chain_transaction';
   children?: (props: InjectedProps) => React.JSX.Element;
   className?: string;
   url?: string;
   showErrorAlert?: boolean;
   num?: number;
   isLoading?: boolean;
+  onLinkClick?: () => void;
 }
 
-const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorAlert, type = 'transaction', isLoading }: Props) => {
+const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorAlert, type = 'transaction', isLoading, onLinkClick }: Props) => {
   const handleLinkClick = React.useCallback(() => {
-    window.location.reload();
-  }, []);
+    onLinkClick ? onLinkClick() : window.location.reload();
+  }, [ onLinkClick ]);
 
   const alertContent = (() => {
     if (showErrorAlert) {
@@ -42,6 +43,12 @@ const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorA
       case 'block':
         name = 'block';
         break;
+      case 'flashblock':
+        name = 'flashblock';
+        break;
+      case 'cross_chain_transaction':
+        name = 'cross chain transaction';
+        break;
       default:
         name = 'transaction';
         break;
@@ -49,6 +56,12 @@ const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorA
 
     if (!num) {
       return `scanning new ${ name }s...`;
+    }
+
+    if (type === 'cross_chain_transaction') {
+      return (
+        <Link href={ url } onClick={ !url ? handleLinkClick : undefined }>More { name }s available</Link>
+      );
     }
 
     return (
@@ -62,7 +75,7 @@ const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorA
   const content = !isLoading ? (
     <Alert
       className={ className }
-      status="warning_table"
+      status={ showErrorAlert || !num ? 'warning_table' : 'info' }
       px={ 4 }
       py="6px"
       fontSize="sm"

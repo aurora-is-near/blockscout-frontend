@@ -7,11 +7,13 @@ import { route } from 'nextjs/routes';
 
 import { toBech32Address } from 'lib/address/bech32';
 import { useAddressHighlightContext } from 'lib/contexts/addressHighlight';
-import { useMultichainContext } from 'lib/contexts/multichain';
 import { useSettingsContext } from 'lib/contexts/settings';
+import getIconUrl from 'lib/multichain/getIconUrl';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import * as EntityBase from 'ui/shared/entities/base/components';
+import { getTagName } from 'ui/shared/EntityTags/utils';
+import type { IconName } from 'ui/shared/IconSvg';
 
 import { distributeEntityProps, getContentProps, getIconProps } from '../base/utils';
 import AddressEntityContentProxy from './AddressEntityContentProxy';
@@ -25,10 +27,7 @@ const getDisplayedAddress = (address: AddressProp, altHash?: string) => {
 };
 
 const Link = chakra((props: LinkProps) => {
-  const defaultHref = route(
-    { pathname: '/address/[hash]', query: { ...props.query, hash: props.address.hash } },
-    props.chain ? { chain: props.chain } : undefined,
-  );
+  const defaultHref = route({ pathname: '/address/[hash]', query: { ...props.query, hash: props.address.hash } });
 
   return (
     <EntityBase.Link
@@ -47,14 +46,10 @@ const Icon = (props: IconProps) => {
     return null;
   }
 
-  const shield = props.shield ?? (props.chain ? { src: props.chain.config.UI.navigation.icon.default } : undefined);
+  const shield = props.shield ?? (props.chain ? { src: getIconUrl(props.chain) } : undefined);
   const hintPostfix: string = props.hintPostfix ?? (props.chain ? ` on ${ props.chain.config.chain.name } (Chain ID: ${ props.chain.config.chain.id })` : '');
 
-  const marginRight = props.marginRight ?? (shield ? '18px' : '8px');
-  const styles = {
-    ...getIconProps(props.variant),
-    marginRight,
-  };
+  const styles = getIconProps(props, Boolean(shield));
 
   if (props.isLoading) {
     return <Skeleton { ...styles } loading borderRadius="full" flexShrink={ 0 }/>;
@@ -75,7 +70,7 @@ const Icon = (props: IconProps) => {
 
     const isProxy = Boolean(props.address.implementations?.length);
     const isVerified = isProxy ? props.address.is_verified && props.address.implementations?.every(({ name }) => Boolean(name)) : props.address.is_verified;
-    const contractIconName: EntityBase.IconBaseProps['name'] = props.address.is_verified ? 'contracts/verified' : 'contracts/regular';
+    const contractIconName: IconName = props.address.is_verified ? 'contracts/verified' : 'contracts/regular';
     const label = (isVerified ? 'verified ' : '') + (isProxy ? 'proxy contract' : 'contract') + hintPostfix;
 
     return (
@@ -125,7 +120,14 @@ export type ContentProps = Omit<EntityBase.ContentBaseProps, 'text'> & Pick<Enti
 
 const Content = chakra((props: ContentProps) => {
   const displayedAddress = getDisplayedAddress(props.address, props.altHash);
-  const nameTag = props.address.metadata?.tags.find(tag => tag.tagType === 'name')?.name;
+  const nameTag = (() => {
+    const tagData = props.address.metadata?.tags.find(tag => tag.tagType === 'name');
+    if (!tagData || !tagData.name) {
+      return;
+    }
+
+    return getTagName(tagData, props.address.hash);
+  })();
   const nameText = nameTag || props.address.ens_domain_name || props.address.name;
 
   const isProxy = props.address.implementations && props.address.implementations.length > 0 && props.address.proxy_type !== 'eip7702';
@@ -196,10 +198,8 @@ const AddressEntity = (props: EntityProps) => {
   const partsProps = distributeEntityProps(props);
   const highlightContext = useAddressHighlightContext(props.noHighlight);
   const settingsContext = useSettingsContext();
-  const multichainContext = useMultichainContext();
 
   const altHash = !props.noAltHash && settingsContext?.addressFormat === 'bech32' ? toBech32Address(props.address.hash) : undefined;
-  const chain = props.chain ?? multichainContext?.chain;
 
   // inside highlight context all tooltips should be interactive
   // because non-interactive ones will not pass 'onMouseLeave' event to the parent component
@@ -217,8 +217,8 @@ const AddressEntity = (props: EntityProps) => {
       position="relative"
       zIndex={ 0 }
     >
-      <Icon { ...partsProps.icon } tooltipInteractive={ Boolean(highlightContext) } chain={ chain }/>
-      { props.noLink ? content : <Link { ...partsProps.link } chain={ chain }>{ content }</Link> }
+      <Icon { ...partsProps.icon } tooltipInteractive={ Boolean(highlightContext) }/>
+      { props.noLink ? content : <Link { ...partsProps.link }>{ content }</Link> }
       <Copy { ...partsProps.copy } altHash={ altHash } tooltipInteractive={ Boolean(highlightContext) }/>
     </Container>
   );

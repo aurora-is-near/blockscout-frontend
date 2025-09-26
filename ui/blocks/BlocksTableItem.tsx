@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import React from 'react';
 
 import type { Block } from 'types/api/block';
+import type { ChainConfig } from 'types/multichain';
 
 import { route } from 'nextjs-routes';
 
@@ -13,7 +14,9 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import { WEI } from 'toolkit/utils/consts';
+import ChainIcon from 'ui/optimismSuperchain/components/ChainIcon';
 import BlockGasUsed from 'ui/shared/block/BlockGasUsed';
+import BlockPendingUpdateHint from 'ui/shared/block/BlockPendingUpdateHint';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import IconSvg from 'ui/shared/IconSvg';
@@ -27,11 +30,12 @@ interface Props {
   isLoading?: boolean;
   animation?: string;
   enableTimeIncrement?: boolean;
+  chainData?: ChainConfig;
 }
 
 const isRollup = config.features.rollup.isEnabled;
 
-const BlocksTableItem = ({ data, isLoading, enableTimeIncrement, animation }: Props) => {
+const BlocksTableItem = ({ data, isLoading, enableTimeIncrement, animation, chainData }: Props) => {
   const totalReward = getBlockTotalReward(data);
   const burntFees = BigNumber(data.burnt_fees || 0);
   const txFees = BigNumber(data.transaction_fees || 0);
@@ -39,6 +43,11 @@ const BlocksTableItem = ({ data, isLoading, enableTimeIncrement, animation }: Pr
 
   return (
     <TableRow animation={ animation }>
+      { chainData && (
+        <TableCell>
+          <ChainIcon data={ chainData } isLoading={ isLoading }/>
+        </TableCell>
+      ) }
       <TableCell >
         <Flex columnGap={ 2 } alignItems="center" mb={ 2 }>
           { data.celo?.l1_era_finalized_epoch_number && (
@@ -46,6 +55,7 @@ const BlocksTableItem = ({ data, isLoading, enableTimeIncrement, animation }: Pr
               <IconSvg name="checkered_flag" boxSize={ 5 } p="1px" isLoading={ isLoading } flexShrink={ 0 }/>
             </Tooltip>
           ) }
+          { data.is_pending_update && <BlockPendingUpdateHint/> }
           <Tooltip disabled={ data.type !== 'reorg' } content="Chain reorganizations">
             <span>
               <BlockEntity

@@ -1,20 +1,28 @@
+import type { BoxProps } from '@chakra-ui/react';
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
 import config from 'configs/app';
 import useApiQuery from 'lib/api/useApiQuery';
+import { useMultichainContext } from 'lib/contexts/multichain';
 import getCurrencyValue from 'lib/getCurrencyValue';
+import getStatsLabelFromTitle from 'lib/stats/getStatsLabelFromTitle';
 import { HOMEPAGE_STATS } from 'stubs/stats';
 import { TXS_STATS, TXS_STATS_MICROSERVICE } from 'stubs/tx';
 import { thinsp } from 'toolkit/utils/htmlEntities';
 import StatsWidget from 'ui/shared/stats/StatsWidget';
 
-const isStatsFeatureEnabled = config.features.stats.isEnabled;
-const rollupFeature = config.features.rollup;
-const isOptimisticRollup = rollupFeature.isEnabled && rollupFeature.type === 'optimistic';
-const isArbitrumRollup = rollupFeature.isEnabled && rollupFeature.type === 'arbitrum';
+interface Props extends BoxProps {}
 
-const TxsStats = () => {
+const TxsStats = (props: Props) => {
+  const multichainContext = useMultichainContext();
+
+  const chainConfig = multichainContext?.chain.config || config;
+  const isStatsFeatureEnabled = chainConfig.features.stats.isEnabled;
+  const rollupFeature = chainConfig.features.rollup;
+  const isOptimisticRollup = rollupFeature.isEnabled && rollupFeature.type === 'optimistic';
+  const isArbitrumRollup = rollupFeature.isEnabled && rollupFeature.type === 'arbitrum';
+
   const txsStatsQuery = useApiQuery('stats:pages_transactions', {
     queryOptions: {
       enabled: isStatsFeatureEnabled,
@@ -50,7 +58,7 @@ const TxsStats = () => {
   // in microservice data, fee values are already divided by 10^decimals
   const txFeeSum24h = isStatsFeatureEnabled ?
     Number(txsStatsQuery.data?.transactions_fee_24h?.value) :
-    Number(txsStatsApiQuery.data?.transaction_fees_sum_24h) / (10 ** config.chain.currency.decimals);
+    Number(txsStatsApiQuery.data?.transaction_fees_sum_24h) / (10 ** chainConfig.chain.currency.decimals);
 
   const avgFee = isStatsFeatureEnabled ? txsStatsQuery.data?.average_transactions_fee_24h?.value : txsStatsApiQuery.data?.transaction_fees_avg_24h;
 
@@ -58,7 +66,7 @@ const TxsStats = () => {
     value: avgFee,
     exchangeRate: statsQuery.data?.coin_price,
     // in microservice data, fee values are already divided by 10^decimals
-    decimals: isStatsFeatureEnabled ? '0' : String(config.chain.currency.decimals),
+    decimals: isStatsFeatureEnabled ? '0' : String(chainConfig.chain.currency.decimals),
     accuracyUsd: 2,
   }) : null;
 
@@ -69,7 +77,7 @@ const TxsStats = () => {
     pendingTxns,
     txFeeSum24h,
     txFeeAvg,
-  ].filter(Boolean).length;
+  ].filter(item => item !== null && item !== undefined).length;
 
   return (
     <Box
@@ -78,22 +86,23 @@ const TxsStats = () => {
       rowGap={ 3 }
       columnGap={ 3 }
       mb={ 6 }
+      { ...props }
     >
       { txCount24h && (
         <StatsWidget
           label={ txsStatsQuery.data?.transactions_24h?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.transactions_24h?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.transactions_24h?.title) :
             'Transactions' }
           value={ Number(txCount24h).toLocaleString() }
           period="24h"
           isLoading={ isLoading }
-          href={ config.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'newTxns' } } : undefined }
+          href={ chainConfig.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'newTxns' } } : undefined }
         />
       ) }
       { operationalTxns24hArbitrum && (
         <StatsWidget
           label={ txsStatsQuery.data?.operational_transactions_24h?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.operational_transactions_24h?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.operational_transactions_24h?.title) :
             'Daily op txns' }
           value={ Number(operationalTxns24hArbitrum).toLocaleString() }
           period="24h"
@@ -103,7 +112,7 @@ const TxsStats = () => {
       { operationalTxns24hOptimistic && (
         <StatsWidget
           label={ txsStatsQuery.data?.op_stack_operational_transactions_24h?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.op_stack_operational_transactions_24h?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.op_stack_operational_transactions_24h?.title) :
             'Daily op txns' }
           value={ Number(operationalTxns24hOptimistic).toLocaleString() }
           period="24h"
@@ -113,7 +122,7 @@ const TxsStats = () => {
       { pendingTxns && (
         <StatsWidget
           label={ txsStatsQuery.data?.pending_transactions_30m?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.pending_transactions_30m?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.pending_transactions_30m?.title) :
             'Rejected transactions' }
           value={ Number(pendingTxns).toLocaleString() }
           period={ isStatsFeatureEnabled ? '30min' : '1h' }
@@ -123,35 +132,30 @@ const TxsStats = () => {
       { txFeeSum24h != null && (
         <StatsWidget
           label={ txsStatsQuery.data?.transactions_fee_24h?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.transactions_fee_24h?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.transactions_fee_24h?.title) :
             'Transactions fees' }
           value={ txFeeSum24h.toLocaleString(undefined, { maximumFractionDigits: 2 }) }
-          valuePostfix={ thinsp + config.chain.currency.symbol }
+          valuePostfix={ thinsp + chainConfig.chain.currency.symbol }
           period="24h"
           isLoading={ isLoading }
-          href={ config.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'txnsFee' } } : undefined }
+          href={ chainConfig.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'txnsFee' } } : undefined }
         />
       ) }
       { txFeeAvg && (
         <StatsWidget
           label={ txsStatsQuery.data?.average_transactions_fee_24h?.title ?
-            getLabelFromTitle(txsStatsQuery.data?.average_transactions_fee_24h?.title) :
+            getStatsLabelFromTitle(txsStatsQuery.data?.average_transactions_fee_24h?.title) :
             'Avg. transaction fee' }
           value={ txFeeAvg.usd ? txFeeAvg.usd : txFeeAvg.valueStr }
           valuePrefix={ txFeeAvg.usd ? '$' : undefined }
-          valuePostfix={ txFeeAvg.usd ? undefined : thinsp + config.chain.currency.symbol }
+          valuePostfix={ txFeeAvg.usd ? undefined : thinsp + chainConfig.chain.currency.symbol }
           period="24h"
           isLoading={ isLoading }
-          href={ config.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'averageTxnFee' } } : undefined }
+          href={ chainConfig.features.stats.isEnabled ? { pathname: '/stats/[id]', query: { id: 'averageTxnFee' } } : undefined }
         />
       ) }
     </Box>
   );
 };
-
-// remove period from title
-function getLabelFromTitle(title: string) {
-  return title.replace(/\s*\([^)]*\)\s*$/, '');
-}
 
 export default React.memo(TxsStats);

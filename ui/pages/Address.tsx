@@ -10,7 +10,7 @@ import getCheckedSummedAddress from 'lib/address/getCheckedSummedAddress';
 import useAddressMetadataInfoQuery from 'lib/address/useAddressMetadataInfoQuery';
 import useAddressMetadataInitUpdate from 'lib/address/useAddressMetadataInitUpdate';
 import useApiQuery from 'lib/api/useApiQuery';
-import { useMultichainContext } from 'lib/contexts/multichain';
+import { useAddressClusters } from 'lib/clusters/useAddressClusters';
 import useAddressProfileApiQuery from 'lib/hooks/useAddressProfileApiQuery';
 import useIsSafeAddress from 'lib/hooks/useIsSafeAddress';
 import getNetworkValidationActionText from 'lib/networks/getNetworkValidationActionText';
@@ -28,6 +28,7 @@ import AddressAccountHistory from 'ui/address/AddressAccountHistory';
 import AddressBlocksValidated from 'ui/address/AddressBlocksValidated';
 import AddressCoinBalance from 'ui/address/AddressCoinBalance';
 import AddressContract from 'ui/address/AddressContract';
+import AddressDeposits from 'ui/address/AddressDeposits';
 import AddressDetails from 'ui/address/AddressDetails';
 import AddressEpochRewards from 'ui/address/AddressEpochRewards';
 import AddressInternalTxs from 'ui/address/AddressInternalTxs';
@@ -38,6 +39,7 @@ import AddressTokenTransfers from 'ui/address/AddressTokenTransfers';
 import AddressTxs from 'ui/address/AddressTxs';
 import AddressUserOps from 'ui/address/AddressUserOps';
 import AddressWithdrawals from 'ui/address/AddressWithdrawals';
+import AddressClusters from 'ui/address/clusters/AddressClusters';
 import { CONTRACT_TAB_IDS } from 'ui/address/contract/utils';
 import AddressFavoriteButton from 'ui/address/details/AddressFavoriteButton';
 import AddressMetadataAlert from 'ui/address/details/AddressMetadataAlert';
@@ -69,7 +71,6 @@ const xScoreFeature = config.features.xStarScore;
 
 const AddressPageContent = () => {
   const router = useRouter();
-  const { chain } = useMultichainContext() || {};
 
   const hash = getQueryParamString(router.query.hash);
 
@@ -91,7 +92,8 @@ const AddressPageContent = () => {
 
   const countersQuery = useAddressCountersQuery({
     hash,
-    addressQuery,
+    isLoading: addressQuery.isPlaceholderData,
+    isDegradedData: addressQuery.isDegradedData,
   });
 
   const userOpsAccountQuery = useApiQuery('general:user_ops_account', {
@@ -131,11 +133,10 @@ const AddressPageContent = () => {
     addressEnsDomainsQuery.data?.items.find((domain) => domain.name === addressQuery.data?.ens_domain_name) :
     undefined;
 
-  const address3rdPartyWidgets = useAddress3rdPartyWidgets(
-    addressQuery.data?.is_contract ? 'contract' : 'eoa',
-    addressQuery.isPlaceholderData,
-    areQueriesEnabled,
-  );
+  const addressClustersQuery = useAddressClusters(hash, areQueriesEnabled);
+
+  const addressType = addressQuery.data?.is_contract && addressQuery.data?.proxy_type !== 'eip7702' ? 'contract' : 'eoa';
+  const address3rdPartyWidgets = useAddress3rdPartyWidgets(addressType, addressQuery.isPlaceholderData, areQueriesEnabled);
 
   const isLoading = addressQuery.isPlaceholderData;
   const isTabsLoading =
@@ -228,6 +229,14 @@ const AddressPageContent = () => {
           component: <AddressUserOps shouldRender={ !isTabsLoading } isQueryEnabled={ areQueriesEnabled }/>,
         } :
         undefined,
+      config.features.beaconChain.isEnabled && addressTabsCountersQuery.data?.beacon_deposits_count ?
+        {
+          id: 'deposits',
+          title: 'Deposits',
+          count: addressTabsCountersQuery.data?.beacon_deposits_count,
+          component: <AddressDeposits shouldRender={ !isTabsLoading } isQueryEnabled={ areQueriesEnabled }/>,
+        } :
+        undefined,
       config.features.beaconChain.isEnabled && addressTabsCountersQuery.data?.withdrawals_count ?
         {
           id: 'withdrawals',
@@ -288,7 +297,7 @@ const AddressPageContent = () => {
         count: address3rdPartyWidgets.items.length,
         component: (
           <Address3rdPartyWidgets
-            addressType={ addressQuery.data?.is_contract ? 'contract' : 'eoa' }
+            addressType={ addressType }
             isLoading={ addressQuery.isPlaceholderData }
             shouldRender={ !isTabsLoading }
             isQueryEnabled={ areQueriesEnabled }
@@ -306,6 +315,7 @@ const AddressPageContent = () => {
     areQueriesEnabled,
     mudTablesCountQuery.data,
     address3rdPartyWidgets,
+    addressType,
   ]);
 
   const usernameApiTag = userPropfileApiQuery.data?.user_profile?.username;
@@ -313,6 +323,16 @@ const AddressPageContent = () => {
   const tags: Array<EntityTag> = React.useMemo(() => {
     return [
       ...(addressQuery.data?.public_tags?.map((tag) => ({ slug: tag.label, name: tag.display_name, tagType: 'custom' as const, ordinal: -1 })) || []),
+      addressQuery.data?.celo?.account ? {
+        slug: 'celo-account',
+        name: 'Celo account',
+        tagType: 'custom' as const,
+        ordinal: PREDEFINED_TAG_PRIORITY,
+        meta: {
+          bgColor: 'yellow.200',
+          textColor: 'black',
+        },
+      } : undefined,
       !addressQuery.data?.is_contract ? { slug: 'eoa', name: 'EOA', tagType: 'custom' as const, ordinal: PREDEFINED_TAG_PRIORITY } : undefined,
       config.features.validators.isEnabled && addressQuery.data?.has_validated_blocks ?
         { slug: 'validator', name: 'Validator', tagType: 'custom' as const, ordinal: PREDEFINED_TAG_PRIORITY } :
@@ -374,6 +394,7 @@ const AddressPageContent = () => {
   const titleContentAfter = (
     <EntityTags
       tags={ tags }
+      addressHash={ addressQuery.data?.hash }
       isLoading={
         isLoading ||
         (config.features.userOps.isEnabled && userOpsAccountQuery.isPlaceholderData) ||
@@ -431,17 +452,17 @@ const AddressPageContent = () => {
         <SolidityscanReport hash={ hash }/> }
       { !isLoading && addressEnsDomainsQuery.data && config.features.nameService.isEnabled &&
         <AddressEnsDomains query={ addressEnsDomainsQuery } addressHash={ hash } mainDomainName={ addressQuery.data?.ens_domain_name }/> }
+      { !isLoading && addressClustersQuery.data && config.features.clusters.isEnabled &&
+        <AddressClusters query={ addressClustersQuery } addressHash={ hash }/> }
       <NetworkExplorers type="address" pathParam={ hash }/>
     </Flex>
   );
-
-  const chainText = chain ? ` on ${ chain.config.chain.name }` : '';
 
   return (
     <>
       <TextAd mb={ 6 }/>
       <PageTitle
-        title={ `${ addressQuery.data?.is_contract && addressQuery.data?.proxy_type !== 'eip7702' ? 'Contract' : 'Address' } details${ chainText }` }
+        title={ `${ addressQuery.data?.is_contract && addressQuery.data?.proxy_type !== 'eip7702' ? 'Contract' : 'Address' } details` }
         contentAfter={ titleContentAfter }
         secondRow={ titleSecondRow }
         isLoading={ isLoading }

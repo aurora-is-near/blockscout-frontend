@@ -17,7 +17,8 @@ import { Image } from 'toolkit/chakra/image';
 import { Link } from 'toolkit/chakra/link';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tag } from 'toolkit/chakra/tag';
-import { ADDRESS_REGEXP } from 'toolkit/components/forms/validators/address';
+import { SECOND } from 'toolkit/utils/consts';
+import { ADDRESS_REGEXP } from 'toolkit/utils/regexp';
 import ContractCertifiedLabel from 'ui/shared/ContractCertifiedLabel';
 import * as AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import * as BlobEntity from 'ui/shared/entities/blob/BlobEntity';
@@ -126,7 +127,7 @@ const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Pr
       case 'label': {
         return (
           <Flex alignItems="center">
-            <IconSvg name="publictags_slim" boxSize={ 6 } mr={ 2 } color="gray.500"/>
+            <IconSvg name="publictags_slim" boxSize={ 6 } mr={ 2 } color="icon.primary"/>
             <Link
               href={ route({ pathname: '/address/[hash]', query: { hash: data.address_hash } }) }
               fontWeight={ 700 }
@@ -208,6 +209,27 @@ const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Pr
               <TxEntity.Content
                 asProp="mark"
                 hash={ data.transaction_hash }
+                textStyle="sm"
+                fontWeight={ 700 }
+              />
+            </TxEntity.Link>
+          </TxEntity.Container>
+        );
+      }
+
+      case 'zetaChainCCTX': {
+        return (
+          <TxEntity.Container>
+            <IconSvg name="interop" boxSize={ 6 } marginRight={ 1 } color="text.secondary"/>
+            <TxEntity.Link
+              isLoading={ isLoading }
+              hash={ data.cctx.index }
+              href={ route({ pathname: '/cc/tx/[hash]', query: { hash: data.cctx.index } }) }
+              onClick={ handleLinkClick }
+            >
+              <TxEntity.Content
+                asProp={ data.cctx.index === searchTerm ? 'mark' : 'span' }
+                hash={ data.cctx.index }
                 textStyle="sm"
                 fontWeight={ 700 }
               />
@@ -349,6 +371,11 @@ const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Pr
           <Text color="text.secondary">{ dayjs(data.timestamp).format('llll') }</Text>
         );
       }
+      case 'zetaChainCCTX': {
+        return (
+          <Text color="text.secondary">{ dayjs(Number(data.cctx.last_update_timestamp) * SECOND).format('llll') }</Text>
+        );
+      }
       case 'tac_operation': {
         return (
           <Text color="text.secondary">{ dayjs(data.tac_operation.timestamp).format('llll') }</Text>
@@ -406,7 +433,7 @@ const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Pr
               </Flex>
             ) }
             { data.type === 'metadata_tag' && (
-              <SearchResultEntityTag metadata={ data.metadata } searchTerm={ searchTerm }/>
+              <SearchResultEntityTag metadata={ data.metadata } addressHash={ data.address_hash } searchTerm={ searchTerm }/>
             ) }
           </Flex>
         ) :

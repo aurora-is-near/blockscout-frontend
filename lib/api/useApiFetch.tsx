@@ -36,12 +36,11 @@ export default function useApiFetch() {
     { pathParams, queryParams, fetchParams, logError, chain }: Params<R> = {},
   ) => {
     const apiToken = cookies.get(cookies.NAMES.API_TOKEN);
-
     const { api, apiName, resource } = getResourceParams(resourceName, chain);
     const url = buildUrl(resourceName, pathParams, queryParams, undefined, chain);
     const withBody = isBodyAllowed(fetchParams?.method);
     const headers = pickBy({
-      'x-endpoint': api.endpoint && apiName !== 'general' && isNeedProxy() ? api.endpoint : undefined,
+      'x-endpoint': isNeedProxy() ? api.endpoint : undefined,
       Authorization: [ 'admin', 'contractInfo' ].includes(apiName) ? apiToken : undefined,
       'x-csrf-token': withBody && csrfToken ? csrfToken : undefined,
       ...resource.headers,
