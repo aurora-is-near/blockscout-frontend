@@ -42,6 +42,13 @@ class MyDocument extends Document {
             rel="stylesheet"
           />
 
+          { config.UI.customCss.url && (
+            <link
+              href={ config.UI.customCss.url }
+              rel="stylesheet"
+            />
+          ) }
+
           { /* eslint-disable-next-line @next/next/no-sync-scripts */ }
           <script src="/assets/envs.js"/>
           { config.features.opSuperchain.isEnabled && (

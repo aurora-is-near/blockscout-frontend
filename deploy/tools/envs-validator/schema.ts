@@ -1002,6 +1002,7 @@ const schema = yup
     NEXT_PUBLIC_MAINTENANCE_ALERT_MESSAGE: yup.string(),
     NEXT_PUBLIC_COLOR_THEME_DEFAULT: yup.string().oneOf(COLOR_THEME_IDS),
     NEXT_PUBLIC_COLOR_THEME_OVERRIDES: yup.object().transform(replaceQuotes).json(),
+    NEXT_PUBLIC_CUSTOM_CSS_URL: yup.string().test(urlTest),
     NEXT_PUBLIC_FONT_FAMILY_HEADING: yup
       .mixed()
       .test('shape', 'Invalid schema were provided for NEXT_PUBLIC_FONT_FAMILY_HEADING', (data) => {

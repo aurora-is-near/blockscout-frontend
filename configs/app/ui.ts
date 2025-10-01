@@ -94,6 +94,9 @@ const UI = Object.freeze({
     'default': defaultColorTheme,
     overrides: parseEnvJson<Record<string, unknown>>(getEnvValue('NEXT_PUBLIC_COLOR_THEME_OVERRIDES')) || {},
   },
+  customCss: {
+    url: getEnvValue('NEXT_PUBLIC_CUSTOM_CSS_URL'),
+  },
   fonts: {
     heading: parseEnvJson<FontFamily>(getEnvValue('NEXT_PUBLIC_FONT_FAMILY_HEADING')),
     body: parseEnvJson<FontFamily>(getEnvValue('NEXT_PUBLIC_FONT_FAMILY_BODY')),
