@@ -25,9 +25,13 @@ permissions:
 jobs:
   code_quality:
     name: Code quality
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip checks') && !(github.event.action == 'unlabeled' && github.event.label.name != 'skip checks') }}
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -62,8 +66,12 @@ jobs:
   toolkit_build_check:
     name: Toolkit build check
     needs: [ code_quality ]
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -124,9 +132,13 @@ jobs:
 
   envs_validation:
     name: ENV variables validation
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     needs: [ code_quality ]
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -166,8 +178,12 @@ jobs:
   jest_tests:
     name: Jest tests
     needs: [ code_quality, envs_validation ]
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -200,10 +216,14 @@ jobs:
 
   pw_affected_tests:
     name: Resolve affected Playwright tests
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     needs: [ code_quality, envs_validation ]
     if: github.event_name == 'pull_request'
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -251,8 +271,8 @@ jobs:
       always() &&
       needs.code_quality.result == 'success' && 
       needs.envs_validation.result == 'success' && 
-      (needs.pw_affected_tests.result == 'success' || needs.pw_affected_tests.result == 'skipped') 
-    runs-on: ubuntu-latest
+      (needs.pw_affected_tests.result == 'success' || needs.pw_affected_tests.result == 'skipped')
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     container:
       image: mcr.microsoft.com/playwright:v1.49.0-noble
 
@@ -262,6 +282,10 @@ jobs:
         project: [ default, mobile, dark-color-mode ]
 
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Install git-lfs
         run: apt-get update && apt-get install git-lfs
 
