@@ -25,9 +25,13 @@ jobs:
   deploy_e2e:
     name: Deploy E2E instance
     needs: publish_image
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     permissions: write-all
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Get Vault credentials
         id: retrieve-vault-secrets
         uses: hashicorp/vault-action@v2.4.1
@@ -54,9 +58,13 @@ jobs:
   test:
     name: Run tests
     needs: deploy_e2e
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/family=c6a.xlarge/image=ubuntu24-full-x64/extras=s3-cache
     permissions: write-all
     steps:
+      - name: Setup RunsOn
+        uses: runs-on/action@v2
+        with:
+          metrics: cpu,network,memory,disk,io
       - name: Get Vault credentials
         id: retrieve-vault-secrets
         uses: hashicorp/vault-action@v2.4.1
