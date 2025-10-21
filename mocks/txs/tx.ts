@@ -283,6 +283,7 @@ export const l2tx: Transaction = {
   l1_fee_scalar: '1.0',
   l1_gas_used: '17060',
   l1_fee: '1584574188135760',
+  operator_fee: '2769347953',
 };
 
 export const stabilityTx: Transaction = {
@@ -311,6 +312,7 @@ export const stabilityTx: Transaction = {
       symbol: 'GAS',
       total_supply: '10000000000000000000000000',
       type: 'ERC-20',
+      reputation: 'ok',
     },
     total_fee: '68762500000000',
     validator_address: {
@@ -342,6 +344,7 @@ export const celoTxn: Transaction = {
       symbol: 'cUSD',
       total_supply: '7145754483836626799435133',
       type: 'ERC-20',
+      reputation: 'ok',
     },
   },
 };

@@ -26,6 +26,6 @@ export interface NetworkExplorer {
 }
 
 export type NearNetworkType = 'mainnet' | 'testnet';
-export type NetworkVerificationTypeEnvs = 'mining' | 'validation';
+export type NetworkVerificationTypeEnvs = 'mining' | 'validation' | 'fee reception';
 export type NetworkVerificationTypeComputed = 'posting' | 'sequencing';
 export type NetworkVerificationType = NetworkVerificationTypeEnvs | NetworkVerificationTypeComputed;

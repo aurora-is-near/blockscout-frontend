@@ -85,7 +85,7 @@ export default function useNavItems(): ReturnType {
     const nameLookup = config.features.nameService.isEnabled || config.features.clusters.isEnabled ? {
       text: 'Name services lookup',
       nextRoute: { pathname: '/name-domains' as const },
-      icon: 'ENS',
+      icon: 'name_services',
       isActive: pathname === '/name-domains' || pathname === '/name-domains/[name]' || pathname === '/clusters/[name]',
     } : null;
     const validators = config.features.validators.isEnabled ? {
@@ -162,7 +162,9 @@ export default function useNavItems(): ReturnType {
         ].filter(Boolean),
         [
           blocks,
-          rollupTxnBatches,
+          epochs,
+          // currently, transaction batches are not implemented for Celo
+          !config.features.celo.isEnabled ? rollupTxnBatches : undefined,
           rollupDisputeGames,
           rollupFeature.outputRootsEnabled ? rollupOutputRoots : undefined,
         ].filter(Boolean),
@@ -256,6 +258,46 @@ export default function useNavItems(): ReturnType {
       },
     ].filter(Boolean);
 
+    const statsNavItem = (() => {
+      const uptimeItem = {
+        text: 'Uptime',
+        nextRoute: { pathname: '/uptime' as const },
+        icon: 'refresh_menu',
+        isActive: pathname.startsWith('/uptime'),
+      };
+
+      if (config.features.stats.isEnabled && config.features.megaEth.isEnabled) {
+        return {
+          text: 'Charts & stats',
+          icon: 'stats',
+          isActive: pathname.startsWith('/stats') || pathname.startsWith('/uptime'),
+          subItems: [
+            {
+              text: `${ config.chain.name } stats`,
+              nextRoute: { pathname: '/stats' as const },
+              icon: 'graph',
+              isActive: pathname.startsWith('/stats/'),
+            },
+            uptimeItem,
+          ],
+        };
+      }
+
+      if (!config.features.stats.isEnabled) {
+        if (config.features.megaEth.isEnabled) {
+          return uptimeItem;
+        }
+        return null;
+      }
+
+      return {
+        text: 'Charts & stats',
+        nextRoute: { pathname: '/stats' as const },
+        icon: 'stats',
+        isActive: pathname.startsWith('/stats'),
+      };
+    })();
+
     const apiNavItem: NavItem | null = config.features.apiDocs.isEnabled ? {
       text: 'API',
       nextRoute: { pathname: '/api-docs' as const },
@@ -310,12 +352,7 @@ export default function useNavItems(): ReturnType {
         icon: 'apps',
         isActive: pathname.startsWith('/app'),
       } : null,
-      config.features.stats.isEnabled ? {
-        text: 'Charts & stats',
-        nextRoute: { pathname: '/stats' as const },
-        icon: 'stats',
-        isActive: pathname.startsWith('/stats'),
-      } : null,
+      statsNavItem,
       apiNavItem,
       {
         text: 'Other',

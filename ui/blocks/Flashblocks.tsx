@@ -1,6 +1,7 @@
 import { Box, HStack } from '@chakra-ui/react';
 import React from 'react';
 
+import config from 'configs/app';
 import { Switch } from 'toolkit/chakra/switch';
 import { Hint } from 'toolkit/components/Hint/Hint';
 
@@ -8,6 +9,8 @@ import FlashblocksList from './flashblocks/FlashblocksList';
 import FlashblocksStats from './flashblocks/FlashblocksStats';
 import FlashblocksTable from './flashblocks/FlashblocksTable';
 import useFlashblocksSocketData from './flashblocks/useFlashblocksSocketData';
+
+const flashblocksFeature = config.features.flashblocks;
 
 const Flashblocks = () => {
 
@@ -29,21 +32,11 @@ const Flashblocks = () => {
     handleFormatChange({ checked: true });
   }, [ handleFormatChange ]);
 
-  const handleMouseEnter = React.useCallback(() => {
-    if (isRealTime && status === 'connected' && !manualModeRef.current) {
-      pause();
-      setIsRealTime(false);
-    }
-  }, [ isRealTime, pause, status ]);
-
-  const handleMouseLeave = React.useCallback(() => {
-    if (!isRealTime && status === 'connected' && !manualModeRef.current) {
-      resume();
-      setIsRealTime(true);
-    }
-  }, [ isRealTime, resume, status ]);
-
   const showAlertError = status === 'error' || status === 'disconnected';
+
+  if (!flashblocksFeature.isEnabled) {
+    return null;
+  }
 
   return (
     <Box>
@@ -52,9 +45,11 @@ const Flashblocks = () => {
         <Switch size="md" flexDirection="row-reverse" onCheckedChange={ handleFormatChange } checked={ isRealTime }>
           Real-time feed
         </Switch>
-        <Hint label="Real-time flashblocks show the latest flashblocks with real-time updates in the chronological order. "/>
+        <Hint
+          label={ `Real-time ${ flashblocksFeature.name }s show the latest ${ flashblocksFeature.name }s with real-time updates in the chronological order. ` }
+        />
       </HStack>
-      <Box hideBelow="lg" onMouseEnter={ handleMouseEnter } onMouseLeave={ handleMouseLeave }>
+      <Box hideBelow="lg">
         <FlashblocksTable
           items={ items }
           newItemsNum={ newItemsNum }

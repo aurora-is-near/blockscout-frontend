@@ -33,7 +33,7 @@
 *.pem
 .tools
 grafana
-.cursor
+.zed
 
 # debug
 npm-debug.log*

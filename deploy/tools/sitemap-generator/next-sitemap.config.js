@@ -156,6 +156,11 @@ module.exports = {
           return null;
         }
         break;
+      case '/uptime':
+        if (!process.env.NEXT_PUBLIC_MEGA_ETH_SOCKET_URL_METRICS) {
+          return null;
+        }
+        break;
       case '/validators':
         if (!process.env.NEXT_PUBLIC_VALIDATORS_CHAIN_TYPE) {
           return null;
@@ -190,7 +195,7 @@ module.exports = {
     );
     const tokens = fetchResource(
       `${ apiUrl }/tokens`,
-      (data) => data.items.map(({ address }) => `/token/${ address }`),
+      (data) => data.items.map(({ address_hash }) => `/token/${ address_hash }`),
     );
     const contracts = fetchResource(
       `${ apiUrl }/smart-contracts`,
