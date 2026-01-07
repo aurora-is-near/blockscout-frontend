@@ -1,22 +1,24 @@
 import { Flex, VStack } from '@chakra-ui/react';
 import React from 'react';
 
+import type { NovesDescribeTxsResponse } from 'types/api/noves';
 import type { Transaction } from 'types/api/transaction';
-import type { ChainConfig } from 'types/multichain';
+import type { ClusterChainConfig } from 'types/multichain';
 
 import config from 'configs/app';
 import { Badge } from 'toolkit/chakra/badge';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
-import ChainIcon from 'ui/optimismSuperchain/components/ChainIcon';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
 import BlockPendingUpdateHint from 'ui/shared/block/BlockPendingUpdateHint';
-import CurrencyValue from 'ui/shared/CurrencyValue';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import ChainIcon from 'ui/shared/externalChains/ChainIcon';
 import TxStatus from 'ui/shared/statusTag/TxStatus';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 import TxFee from 'ui/shared/tx/TxFee';
 import TxWatchListTags from 'ui/shared/tx/TxWatchListTags';
+import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 import TxAdditionalInfo from 'ui/txs/TxAdditionalInfo';
 
 import TxTranslationType from './TxTranslationType';
@@ -29,10 +31,22 @@ type Props = {
   enableTimeIncrement?: boolean;
   isLoading?: boolean;
   animation?: string;
-  chainData?: ChainConfig;
+  chainData?: ClusterChainConfig;
+  translationIsLoading?: boolean;
+  translationData?: NovesDescribeTxsResponse;
 };
 
-const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, isLoading, animation, chainData }: Props) => {
+const TxsTableItem = ({
+  tx,
+  showBlockInfo,
+  currentAddress,
+  enableTimeIncrement,
+  isLoading,
+  animation,
+  chainData,
+  translationIsLoading,
+  translationData,
+}: Props) => {
   const dataTo = tx.to ? tx.to : tx.created_contract;
 
   const getTxStatus = () => {
@@ -42,6 +56,8 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
       return tx.status;
     }
   };
+
+  const protocolTag = tx.to?.metadata?.tags?.find(tag => tag.tagType === 'protocol');
 
   return (
     <TableRow key={ tx.hash } animation={ animation }>
@@ -61,7 +77,7 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
             fontWeight="bold"
             noIcon
             maxW="100%"
-            truncation="constant_long"
+            truncation="constant"
           />
           <TimeWithTooltip
             timestamp={ tx.timestamp }
@@ -72,12 +88,12 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
         </VStack>
       </TableCell>
       <TableCell>
-        <VStack alignItems="start">
-          { tx.translation ? (
+        <VStack alignItems="stretch">
+          { translationIsLoading || translationData ? (
             <TxTranslationType
-              types={ tx.transaction_types }
-              isLoading={ isLoading || tx.translation.isLoading }
-              translatationType={ tx.translation.data?.type }
+              txTypes={ tx.transaction_types }
+              isLoading={ isLoading || translationIsLoading }
+              type={ translationData?.type }
             />
           ) :
             <TxType types={ tx.transaction_types } isLoading={ isLoading }/>
@@ -87,11 +103,14 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
         </VStack>
       </TableCell>
       <TableCell whiteSpace="nowrap">
-        { tx.method && (
-          <Badge colorPalette={ tx.method === 'Multicall' ? 'teal' : 'gray' } loading={ isLoading } truncated>
-            <span>{ tx.method }</span>
-          </Badge>
-        ) }
+        <VStack alignItems="stretch">
+          { tx.method && (
+            <Badge colorPalette={ tx.method === 'Multicall' ? 'teal' : 'gray' } loading={ isLoading } truncated>
+              <span>{ tx.method }</span>
+            </Badge>
+          ) }
+          { protocolTag && <EntityTag data={ protocolTag } isLoading={ isLoading }/> }
+        </VStack>
       </TableCell>
       { showBlockInfo && (
         <TableCell>
@@ -121,7 +140,14 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
       </TableCell>
       { !config.UI.views.tx.hiddenFields?.value && (
         <TableCell isNumeric>
-          <CurrencyValue value={ tx.value } accuracy={ 8 } isLoading={ isLoading } wordBreak="break-word"/>
+          <NativeCoinValue
+            amount={ tx.value }
+            noSymbol
+            loading={ isLoading }
+            exchangeRate={ tx.exchange_rate }
+            layout="vertical"
+            rowGap={ 3 }
+          />
         </TableCell>
       ) }
       { !config.UI.views.tx.hiddenFields?.tx_fee && (
@@ -129,10 +155,10 @@ const TxsTableItem = ({ tx, showBlockInfo, currentAddress, enableTimeIncrement, 
           <TxFee
             tx={ tx }
             accuracy={ 8 }
-            isLoading={ isLoading }
-            withCurrency={ Boolean(tx.celo || tx.stability_fee) }
-            justifyContent="end"
-            wordBreak="break-word"
+            loading={ isLoading }
+            noSymbol={ !(tx.celo || tx.stability_fee) }
+            layout="vertical"
+            rowGap={ 3 }
           />
         </TableCell>
       ) }

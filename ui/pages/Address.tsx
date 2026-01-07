@@ -34,6 +34,7 @@ import AddressEpochRewards from 'ui/address/AddressEpochRewards';
 import AddressInternalTxs from 'ui/address/AddressInternalTxs';
 import AddressLogs from 'ui/address/AddressLogs';
 import AddressMud from 'ui/address/AddressMud';
+import AddressMultichainInfoButton from 'ui/address/AddressMultichainInfoButton';
 import AddressTokens from 'ui/address/AddressTokens';
 import AddressTokenTransfers from 'ui/address/AddressTokenTransfers';
 import AddressTxs from 'ui/address/AddressTxs';
@@ -68,6 +69,8 @@ const PREDEFINED_TAG_PRIORITY = 100;
 const txInterpretation = config.features.txInterpretation;
 const addressProfileAPIFeature = config.features.addressProfileAPI;
 const xScoreFeature = config.features.xStarScore;
+const nameServicesFeature = config.features.nameServices;
+const beaconChainFeature = config.features.beaconChain;
 
 const AddressPageContent = () => {
   const router = useRouter();
@@ -126,7 +129,7 @@ const AddressPageContent = () => {
       order: 'ASC',
     },
     queryOptions: {
-      enabled: Boolean(hash) && config.features.nameService.isEnabled,
+      enabled: Boolean(hash) && nameServicesFeature.isEnabled && nameServicesFeature.ens.isEnabled,
     },
   });
   const addressMainDomain = !addressQuery.isPlaceholderData ?
@@ -166,7 +169,7 @@ const AddressPageContent = () => {
     isEnabled: !countersQuery.isPlaceholderData && !countersQuery.isDegradedData,
   });
 
-  const isSafeAddress = useIsSafeAddress(!addressQuery.isPlaceholderData && addressQuery.data?.is_contract ? hash : undefined);
+  const isSafeAddress = useIsSafeAddress(!addressQuery.isPlaceholderData && addressQuery.data?.is_contract ? addressQuery.data.hash : undefined);
 
   const xStarQuery = useFetchXStarScore({ hash });
 
@@ -229,7 +232,7 @@ const AddressPageContent = () => {
           component: <AddressUserOps shouldRender={ !isTabsLoading } isQueryEnabled={ areQueriesEnabled }/>,
         } :
         undefined,
-      config.features.beaconChain.isEnabled && addressTabsCountersQuery.data?.beacon_deposits_count ?
+      beaconChainFeature.isEnabled && !beaconChainFeature.withdrawalsOnly && addressTabsCountersQuery.data?.beacon_deposits_count ?
         {
           id: 'deposits',
           title: 'Deposits',
@@ -448,11 +451,12 @@ const AddressPageContent = () => {
       <AddressQrCode hash={ addressQuery.data?.filecoin?.robust ?? checkSummedHash } isLoading={ isLoading }/>
       <AccountActionsMenu isLoading={ isLoading }/>
       <HStack ml="auto" gap={ 2 }/>
+      <AddressMultichainInfoButton loading={ isLoading } addressData={ addressQuery.data }/>
       { !isLoading && addressQuery.data?.is_contract && addressQuery.data?.is_verified && config.UI.views.address.solidityscanEnabled &&
         <SolidityscanReport hash={ hash }/> }
-      { !isLoading && config.features.nameService.isEnabled &&
+      { !isLoading && nameServicesFeature.isEnabled && nameServicesFeature.ens.isEnabled &&
         <AddressEnsDomains query={ addressEnsDomainsQuery } addressHash={ hash } mainDomainName={ addressQuery.data?.ens_domain_name }/> }
-      { !isLoading && config.features.clusters.isEnabled &&
+      { !isLoading && nameServicesFeature.isEnabled && nameServicesFeature.clusters.isEnabled &&
         <AddressClusters query={ addressClustersQuery } addressHash={ hash }/> }
       <NetworkExplorers type="address" pathParam={ hash }/>
     </Flex>

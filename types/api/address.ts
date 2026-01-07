@@ -67,6 +67,7 @@ export interface AddressTokenBalance {
   value: string;
   token_instance: TokenInstance | null;
 }
+export type AddressTokenBalancesResponse = Array<AddressTokenBalance>;
 
 export type AddressNFT = TokenInstance & {
   token: TokenInfo;
@@ -143,7 +144,7 @@ export type AddressTokenTransferFilters = {
 };
 
 export type AddressTokensFilter = {
-  type: TokenType;
+  type: TokenType | Array<TokenType>;
 };
 
 export type AddressNFTTokensFilter = {
