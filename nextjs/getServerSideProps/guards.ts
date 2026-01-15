@@ -6,7 +6,6 @@ import type { Route } from 'nextjs-routes';
 import type { Props } from 'nextjs/getServerSideProps/handlers';
 
 import config from 'configs/app';
-import isNeedProxy from 'lib/api/isNeedProxy';
 
 export type Guard = (chainConfig: typeof config) => <Pathname extends Route['pathname'] = never>(context: GetServerSidePropsContext) =>
 Promise<GetServerSidePropsResult<Props<Pathname>> | undefined>;
@@ -37,6 +36,15 @@ export const userOps: Guard = (chainConfig: typeof config) => async() => {
 
 export const marketplace: Guard = (chainConfig: typeof config) => async() => {
   if (!chainConfig.features.marketplace.isEnabled) {
+    return {
+      notFound: true,
+    };
+  }
+};
+
+export const marketplaceEssentialDapp: Guard = (chainConfig: typeof config) => async() => {
+  const feature = chainConfig.features.marketplace;
+  if (!feature.isEnabled || !feature.essentialDapps) {
     return {
       notFound: true,
     };
@@ -75,8 +83,18 @@ export const suave: Guard = (chainConfig: typeof config) => async() => {
   }
 };
 
-export const nameService: Guard = (chainConfig: typeof config) => async() => {
-  if (!chainConfig.features.nameService.isEnabled) {
+export const nameServiceEns: Guard = (chainConfig: typeof config) => async() => {
+  const feature = chainConfig.features.nameServices;
+  if (!feature.isEnabled || !feature.ens.isEnabled) {
+    return {
+      notFound: true,
+    };
+  }
+};
+
+export const nameServiceClusters: Guard = (chainConfig: typeof config) => async() => {
+  const feature = chainConfig.features.nameServices;
+  if (!feature.isEnabled || !feature.clusters.isEnabled) {
     return {
       notFound: true,
     };
@@ -124,6 +142,14 @@ export const gasTracker: Guard = (chainConfig: typeof config) => async() => {
   }
 };
 
+export const hotContracts: Guard = (chainConfig: typeof config) => async() => {
+  if (!chainConfig.features.hotContracts.isEnabled) {
+    return {
+      notFound: true,
+    };
+  }
+};
+
 export const advancedFilter: Guard = (chainConfig: typeof config) => async() => {
   if (!chainConfig.features.advancedFilter.isEnabled) {
     return {
@@ -140,8 +166,8 @@ export const dataAvailability: Guard = (chainConfig: typeof config) => async() =
   }
 };
 
-export const login: Guard = () => async() => {
-  if (!isNeedProxy()) {
+export const login: Guard = (chainConfig: typeof config) => async() => {
+  if (!chainConfig.app.isReview && !chainConfig.app.isDev) {
     return {
       notFound: true,
     };
@@ -172,14 +198,6 @@ export const pools: Guard = (chainConfig: typeof config) => async() => {
   }
 };
 
-export const clusters: Guard = (chainConfig: typeof config) => async() => {
-  if (!chainConfig.features.clusters.isEnabled) {
-    return {
-      notFound: true,
-    };
-  }
-};
-
 export const zetaChainCCTX: Guard = (chainConfig: typeof config) => async() => {
   if (!chainConfig.features.zetachain.isEnabled) {
     return {
@@ -200,8 +218,9 @@ export const rollup: Guard = (chainConfig: typeof config) => async() => {
 const DEPOSITS_ROLLUP_TYPES: Array<RollupType> = [ 'optimistic', 'shibarium', 'zkEvm', 'arbitrum', 'scroll' ];
 export const deposits: Guard = (chainConfig: typeof config) => async() => {
   const rollupFeature = chainConfig.features.rollup;
+  const beaconChainFeature = chainConfig.features.beaconChain;
   if (
-    !chainConfig.features.beaconChain.isEnabled &&
+    (!beaconChainFeature.isEnabled || beaconChainFeature.withdrawalsOnly) &&
     !(rollupFeature.isEnabled && DEPOSITS_ROLLUP_TYPES.includes(rollupFeature.type))) {
     return {
       notFound: true,

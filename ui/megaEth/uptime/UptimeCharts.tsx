@@ -2,12 +2,14 @@ import { Box, Flex, Grid, GridItem } from '@chakra-ui/react';
 import * as d3 from 'd3';
 import React from 'react';
 
+import type { AxesConfigFn } from 'toolkit/components/charts/types';
 import type { UptimeHistoryFull, UptimeHistoryItem } from 'types/api/megaEth';
-import type { AxesConfigFn } from 'ui/shared/chart/types';
 
+import { useSettingsContext } from 'lib/contexts/settings';
 import { Heading } from 'toolkit/chakra/heading';
+import { ChartWidget } from 'toolkit/components/charts/ChartWidget';
 import { DAY, HOUR, SECOND } from 'toolkit/utils/consts';
-import ChartWidget from 'ui/shared/chart/ChartWidget';
+import { useChartsConfig } from 'ui/shared/chart/config';
 import TagGroupSelect from 'ui/shared/tagGroupSelect/TagGroupSelect';
 
 const INTERVALS = [
@@ -20,12 +22,15 @@ type IntervalId = (typeof INTERVALS)[number]['id'];
 
 const TIME_FORMAT = '%e %b %Y, %H:%M:%S';
 
-const AXES_CONFIG_BASE: AxesConfigFn = ({ isEnlarged, isMobile }) => ({
+const AXES_CONFIG_BASE: (isLocalTime: boolean) => AxesConfigFn = (isLocalTime) => ({ isEnlarged, isMobile }) => ({
   y: {
     scale: { min: 0 },
   },
   x: {
     ticks: isEnlarged && !isMobile ? 8 : 5,
+    tickFormatter: () => (d: d3.AxisDomain) => {
+      return isLocalTime ? d3.timeFormat('%H:%M')(d as Date) : d3.utcFormat('%H:%M')(d as Date);
+    },
   },
 });
 
@@ -74,18 +79,21 @@ interface Props {
 
 const UptimeCharts = ({ historyData }: Props) => {
   const [ interval, setInterval ] = React.useState<IntervalId>('3h');
+  const chartsConfig = useChartsConfig();
+
+  const { isLocalTime } = useSettingsContext() ?? { isLocalTime: true };
 
   const axesConfig = React.useMemo(() => {
     switch (interval) {
       case '3h':
       case '24h':
-        return AXES_CONFIG_BASE;
+        return AXES_CONFIG_BASE(isLocalTime);
       case '7d':
         return AXES_CONFIG_LONG;
     }
-  }, [ interval ]);
+  }, [ interval, isLocalTime ]);
 
-  const tpsItems = React.useMemo(() => {
+  const tpsCharts = React.useMemo(() => {
     if (!historyData) {
       return [];
     }
@@ -103,15 +111,28 @@ const UptimeCharts = ({ historyData }: Props) => {
     const now = Date.now();
 
     const smoothedData = smoothData(data, 7);
-    return smoothedData
+    const items = smoothedData
       .map(({ value, timestamp }) => {
         const date = new Date(timestamp * SECOND);
-        return { date, value: Number(value.toFixed(0)), dateLabel: d3.timeFormat(TIME_FORMAT)(date) };
+        return {
+          date,
+          value: Number(value.toFixed(0)),
+          dateLabel: isLocalTime ? d3.timeFormat(TIME_FORMAT)(date) : d3.utcFormat(TIME_FORMAT)(date),
+        };
       })
       .filter(filterByInterval(interval, now));
-  }, [ historyData, interval ]);
 
-  const gasItems = React.useMemo(() => {
+    return [
+      {
+        id: 'tps',
+        name: 'Value',
+        items,
+        charts: chartsConfig,
+      },
+    ];
+  }, [ chartsConfig, historyData, interval, isLocalTime ]);
+
+  const gasCharts = React.useMemo(() => {
     if (!historyData) {
       return [];
     }
@@ -131,15 +152,28 @@ const UptimeCharts = ({ historyData }: Props) => {
 
     const smoothedData = smoothData(data, 7);
 
-    return smoothedData
+    const items = smoothedData
       .map(({ value, timestamp }) => {
         const date = new Date(timestamp * SECOND);
-        return { date, value: Number((value / 1_000_000).toFixed(2)), dateLabel: d3.timeFormat(TIME_FORMAT)(date) };
+        return {
+          date,
+          value: Number((value / 1_000_000).toFixed(2)),
+          dateLabel: isLocalTime ? d3.timeFormat(TIME_FORMAT)(date) : d3.utcFormat(TIME_FORMAT)(date),
+        };
       })
       .filter(filterByInterval(interval, now));
-  }, [ historyData, interval ]);
 
-  const blockIntervalItems = React.useMemo(() => {
+    return [
+      {
+        id: 'gas',
+        name: 'Value',
+        items,
+        charts: chartsConfig,
+      },
+    ];
+  }, [ chartsConfig, historyData, interval, isLocalTime ]);
+
+  const blockIntervalCharts = React.useMemo(() => {
     if (!historyData) {
       return [];
     }
@@ -159,13 +193,26 @@ const UptimeCharts = ({ historyData }: Props) => {
 
     const smoothedData = smoothData(data, 7);
 
-    return smoothedData
+    const items = smoothedData
       .map(({ value, timestamp }) => {
         const date = new Date(timestamp * SECOND);
-        return { date, value: Number(value.toFixed(1)), dateLabel: d3.timeFormat(TIME_FORMAT)(date) };
+        return {
+          date,
+          value: Number(value.toFixed(1)),
+          dateLabel: isLocalTime ? d3.timeFormat(TIME_FORMAT)(date) : d3.utcFormat(TIME_FORMAT)(date),
+        };
       })
       .filter(filterByInterval(interval, now));
-  }, [ historyData, interval ]);
+
+    return [
+      {
+        id: 'blockInterval',
+        name: 'Value',
+        items,
+        charts: chartsConfig,
+      },
+    ];
+  }, [ chartsConfig, historyData, interval, isLocalTime ]);
 
   const handleIntervalChange = React.useCallback((newInterval: IntervalId) => {
     setInterval(newInterval);
@@ -188,7 +235,7 @@ const UptimeCharts = ({ historyData }: Props) => {
         <GridItem colSpan={{ base: 1, lg: 2 }} minH={{ base: '220px', lg: '320px' }}>
           <ChartWidget
             title="TPS"
-            items={ tpsItems }
+            charts={ tpsCharts }
             isLoading={ false }
             isError={ false }
             axesConfig={ axesConfig }
@@ -197,7 +244,7 @@ const UptimeCharts = ({ historyData }: Props) => {
         <GridItem minH={{ base: '220px', lg: '320px' }}>
           <ChartWidget
             title="MGas/s"
-            items={ gasItems }
+            charts={ gasCharts }
             isLoading={ false }
             isError={ false }
             axesConfig={ axesConfig }
@@ -206,7 +253,7 @@ const UptimeCharts = ({ historyData }: Props) => {
         <GridItem minH={{ base: '220px', lg: '320px' }}>
           <ChartWidget
             title="Block time (ms)"
-            items={ blockIntervalItems }
+            charts={ blockIntervalCharts }
             isLoading={ false }
             isError={ false }
             axesConfig={ axesConfig }

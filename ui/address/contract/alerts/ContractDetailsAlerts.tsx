@@ -48,7 +48,7 @@ const ContractDetailsAlerts = ({ data, isLoading, addressData, channel }: Props)
         </Box>
       ) }
       { data?.is_verified && (
-        <Alert status="success" loading={ isLoading } descriptionProps={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 3, columnGap: 5 }}>
+        <Alert status="success" loading={ isLoading } descriptionProps={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 2, columnGap: 5 }}>
           <span>Contract Source Code Verified ({ data.is_partially_verified ? 'Partial' : 'Exact' } Match)</span>
           {
             data.is_partially_verified ? (
@@ -59,6 +59,13 @@ const ContractDetailsAlerts = ({ data, isLoading, addressData, channel }: Props)
             ) : null
           }
         </Alert>
+      ) }
+      { addressData.proxy_type && (
+        <ContractDetailsAlertProxyPattern
+          type={ addressData.proxy_type }
+          isLoading={ isLoading }
+          conflictingImplementations={ data?.conflicting_implementations ?? undefined }
+        />
       ) }
       <ContractDetailsAlertVerificationSource data={ data }/>
       { (data?.is_changed_bytecode || isChangedBytecodeSocket) && (
@@ -82,7 +89,6 @@ const ContractDetailsAlerts = ({ data, isLoading, addressData, channel }: Props)
           <span> page</span>
         </Alert>
       ) }
-      { addressData.proxy_type && <ContractDetailsAlertProxyPattern type={ addressData.proxy_type } isLoading={ isLoading }/> }
     </Flex>
   );
 };

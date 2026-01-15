@@ -1,4 +1,3 @@
-import { Flex } from '@chakra-ui/react';
 import React from 'react';
 
 import type { ZkSyncBatch } from 'types/api/zkSyncL2';
@@ -37,12 +36,9 @@ const ZkSyncL2TxnBatchHashesInfo = ({ isLoading, data }: Props) => {
               isLoading={ isLoading }
               hash={ data.commit_transaction_hash }
               maxW="100%"
-              noCopy={ false }
             />
             { data.commit_transaction_timestamp && (
-              <Flex alignItems="center" maxW="100%">
-                <DetailedInfoTimestamp timestamp={ data.commit_transaction_timestamp } isLoading={ isLoading }/>
-              </Flex>
+              <DetailedInfoTimestamp timestamp={ data.commit_transaction_timestamp } isLoading={ isLoading }/>
             ) }
           </>
         ) : <Skeleton loading={ isLoading }>Pending</Skeleton> }
@@ -61,12 +57,9 @@ const ZkSyncL2TxnBatchHashesInfo = ({ isLoading, data }: Props) => {
               isLoading={ isLoading }
               hash={ data.prove_transaction_hash }
               maxW="100%"
-              noCopy={ false }
             />
             { data.prove_transaction_timestamp && (
-              <Flex alignItems="center" maxW="100%">
-                <DetailedInfoTimestamp timestamp={ data.prove_transaction_timestamp } isLoading={ isLoading }/>
-              </Flex>
+              <DetailedInfoTimestamp timestamp={ data.prove_transaction_timestamp } isLoading={ isLoading }/>
             ) }
           </>
         ) : <Skeleton loading={ isLoading }>Pending</Skeleton> }
@@ -85,12 +78,9 @@ const ZkSyncL2TxnBatchHashesInfo = ({ isLoading, data }: Props) => {
               isLoading={ isLoading }
               hash={ data.execute_transaction_hash }
               maxW="100%"
-              noCopy={ false }
             />
             { data.execute_transaction_timestamp && (
-              <Flex alignItems="center" maxW="100%">
-                <DetailedInfoTimestamp timestamp={ data.execute_transaction_timestamp } isLoading={ isLoading }/>
-              </Flex>
+              <DetailedInfoTimestamp timestamp={ data.execute_transaction_timestamp } isLoading={ isLoading }/>
             ) }
           </>
         ) : <Skeleton loading={ isLoading }>Pending</Skeleton> }

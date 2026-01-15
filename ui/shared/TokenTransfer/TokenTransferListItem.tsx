@@ -2,9 +2,8 @@ import { Flex } from '@chakra-ui/react';
 import React from 'react';
 
 import type { TokenTransfer } from 'types/api/tokenTransfer';
-import type { ChainConfig } from 'types/multichain';
+import type { ClusterChainConfig } from 'types/multichain';
 
-import getCurrencyValue from 'lib/getCurrencyValue';
 import { getTokenTypeName } from 'lib/token/tokenTypes';
 import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
@@ -15,6 +14,7 @@ import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 import { getTokenTransferTypeText } from 'ui/shared/TokenTransfer/helpers';
+import AssetValue from 'ui/shared/value/AssetValue';
 import TxAdditionalInfo from 'ui/txs/TxAdditionalInfo';
 
 type Props = TokenTransfer & {
@@ -22,7 +22,7 @@ type Props = TokenTransfer & {
   showTxInfo?: boolean;
   enableTimeIncrement?: boolean;
   isLoading?: boolean;
-  chainData?: ChainConfig;
+  chainData?: ClusterChainConfig;
 };
 
 const TokenTransferListItem = ({
@@ -39,14 +39,6 @@ const TokenTransferListItem = ({
   isLoading,
   chainData,
 }: Props) => {
-  const { usd, valueStr } = total && 'value' in total && total.value !== null ? getCurrencyValue({
-    value: total.value,
-    exchangeRate: token?.exchange_rate,
-    accuracy: 8,
-    accuracyUsd: 2,
-    decimals: total.decimals || '0',
-  }) : { usd: null, valueStr: null };
-
   return (
     <ListItemMobile rowGap={ 3 }>
       <Flex w="100%" justifyContent="space-between">
@@ -72,15 +64,17 @@ const TokenTransferListItem = ({
       { total && 'token_id' in total && total.token_id !== null && token && (
         <NftEntity hash={ token.address_hash } id={ total.token_id } instance={ total.token_instance } isLoading={ isLoading }/>
       ) }
-      { showTxInfo && txHash && (
+      { showTxInfo && (
         <Flex justifyContent="space-between" alignItems="center" lineHeight="24px" width="100%">
-          <TxEntity
-            isLoading={ isLoading }
-            hash={ txHash }
-            truncation="constant_long"
-            fontWeight="700"
-            chain={ chainData }
-          />
+          { txHash && (
+            <TxEntity
+              isLoading={ isLoading }
+              hash={ txHash }
+              truncation="constant_long"
+              fontWeight="700"
+              chain={ chainData }
+            />
+          ) }
           <TimeWithTooltip
             timestamp={ timestamp }
             enableIncrement={ enableTimeIncrement }
@@ -98,13 +92,16 @@ const TokenTransferListItem = ({
         isLoading={ isLoading }
         w="100%"
       />
-      { valueStr && (
+      { total && 'value' in total && total.value !== null && (
         <Flex columnGap={ 2 } w="100%">
           <Skeleton loading={ isLoading } fontWeight={ 500 } flexShrink={ 0 }>Value</Skeleton>
-          <Skeleton loading={ isLoading } color="text.secondary" wordBreak="break-all" overflow="hidden">
-            <span>{ valueStr }</span>
-            { usd && <span> (${ usd })</span> }
-          </Skeleton>
+          <AssetValue
+            amount={ total && 'value' in total && total.value !== null ? total.value : null }
+            decimals={ total && 'decimals' in total ? total.decimals || '0' : '0' }
+            exchangeRate={ token?.exchange_rate }
+            loading={ isLoading }
+            color="text.secondary"
+          />
         </Flex>
       ) }
     </ListItemMobile>

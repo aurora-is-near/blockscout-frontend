@@ -23,7 +23,7 @@ const TxNearExplorer = ({ hash, isLink = false }: Props) => {
       { isLink ? (
         <EntityBase.Link
           href={ explorerLink(hash) }
-          isExternal
+          external
         >
           { hash }
         </EntityBase.Link>

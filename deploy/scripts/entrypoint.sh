@@ -17,7 +17,7 @@ export_envs_from_preset() {
   fi
 
   local blacklist=(
-    "NEXT_PUBLIC_APP_PROTOCOL" 
+    "NEXT_PUBLIC_APP_PROTOCOL"
     "NEXT_PUBLIC_APP_HOST"
     "NEXT_PUBLIC_APP_PORT"
     "NEXT_PUBLIC_APP_ENV"
@@ -69,16 +69,27 @@ node --no-warnings ./og_image_generator.js
 ./make_envs_script.sh
 
 # Generate multichain config
-node ./deploy/tools/multichain-config-generator/dist/index.js
+node --no-warnings ./deploy/tools/multichain-config-generator/dist/index.js
+if [ $? -ne 0 ]; then
+  echo "👎 Unable to generate multichain config."
+  exit 1
+fi
+
+# Generate essential dapps chains config
+node --no-warnings ./deploy/tools/essential-dapps-chains-config-generator/dist/index.js
+if [ $? -ne 0 ]; then
+  echo "👎 Unable to generate essential dapps chains config."
+  exit 1
+fi
 
 # Generate sitemap.xml and robots.txt files
 ./sitemap_generator.sh
 
 # Generate llms.txt file
-node ./deploy/tools/llms-txt-generator/dist/index.js
+node --no-warnings ./deploy/tools/llms-txt-generator/dist/index.js
 
 # Print list of enabled features
-node ./feature-reporter.js
+node --no-warnings ./feature-reporter.js
 
 echo "Starting Next.js application"
 exec "$@"

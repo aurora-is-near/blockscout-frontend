@@ -8,11 +8,11 @@ import { AddressHighlightProvider } from 'lib/contexts/addressHighlight';
 import { useMultichainContext } from 'lib/contexts/multichain';
 import useInitialList from 'lib/hooks/useInitialList';
 import useLazyRenderedList from 'lib/hooks/useLazyRenderedList';
-import { getChainDataForList } from 'lib/multichain/getChainDataForList';
 import { currencyUnits } from 'lib/units';
 import { TableBody, TableColumnHeader, TableColumnHeaderSortable, TableHeader, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
 import TimeFormatToggle from 'ui/shared/time/TimeFormatToggle';
 
+import type { TxsTranslationQuery } from './noves/useDescribeTxs';
 import TxsSocketNotice from './socket/TxsSocketNotice';
 import TxsTableItem from './TxsTableItem';
 
@@ -27,6 +27,7 @@ type Props = {
   enableTimeIncrement?: boolean;
   isLoading?: boolean;
   stickyHeader?: boolean;
+  translationQuery?: TxsTranslationQuery;
 };
 
 const TxsTable = ({
@@ -40,6 +41,7 @@ const TxsTable = ({
   enableTimeIncrement,
   isLoading,
   stickyHeader = true,
+  translationQuery,
 }: Props) => {
   const { cutRef, renderedItemsNum } = useLazyRenderedList(txs, !isLoading);
   const initialList = useInitialList({
@@ -48,13 +50,21 @@ const TxsTable = ({
     enabled: !isLoading,
   });
   const multichainContext = useMultichainContext();
-  const chainData = getChainDataForList(multichainContext);
+  const chainData = multichainContext?.chain;
 
   const feeCurrency = config.UI.views.tx.hiddenFields?.fee_currency || config.chain.hasMultipleGasCurrencies ?
     '' :
     ' ' + currencyUnits.ether;
 
   const TableHeaderComponent = stickyHeader ? TableHeaderSticky : TableHeader;
+
+  const columnNum = [
+    showBlockInfo,
+    true,
+    !config.UI.views.tx.hiddenFields?.value,
+    !config.UI.views.tx.hiddenFields?.tx_fee,
+  ].filter(Boolean).length;
+  const baseWidth = `${ 100 / columnNum }%`;
 
   return (
     <AddressHighlightProvider>
@@ -68,11 +78,11 @@ const TxsTable = ({
               <TimeFormatToggle/>
             </TableColumnHeader>
             <TableColumnHeader width="160px">Type</TableColumnHeader>
-            <TableColumnHeader width="20%">Method</TableColumnHeader>
+            <TableColumnHeader width={ baseWidth }>Method</TableColumnHeader>
             { showBlockInfo && (
               onSortToggle ? (
                 <TableColumnHeaderSortable
-                  width="18%"
+                  width={ baseWidth }
                   sortField="block_number"
                   sortValue={ sort }
                   onSortToggle={ onSortToggle }
@@ -80,14 +90,14 @@ const TxsTable = ({
                   Block
                 </TableColumnHeaderSortable>
               ) : (
-                <TableColumnHeader width="18%">Block</TableColumnHeader>
+                <TableColumnHeader width={ baseWidth }>Block</TableColumnHeader>
               )
             ) }
-            <TableColumnHeader width="224px">From/To</TableColumnHeader>
+            <TableColumnHeader width={ columnNum <= 2 ? baseWidth : '224px' }>From/To</TableColumnHeader>
             { !config.UI.views.tx.hiddenFields?.value && (
               onSortToggle ? (
                 <TableColumnHeaderSortable
-                  width="20%"
+                  width={ baseWidth }
                   isNumeric
                   sortField="value"
                   sortValue={ sort }
@@ -96,13 +106,13 @@ const TxsTable = ({
                   { `Value ${ currencyUnits.ether }` }
                 </TableColumnHeaderSortable>
               ) : (
-                <TableColumnHeader width="20%" isNumeric>Value</TableColumnHeader>
+                <TableColumnHeader width={ baseWidth } isNumeric>Value</TableColumnHeader>
               )
             ) }
             { !config.UI.views.tx.hiddenFields?.tx_fee && (
               onSortToggle ? (
                 <TableColumnHeaderSortable
-                  width="20%"
+                  width={ baseWidth }
                   isNumeric
                   pr={ 5 }
                   sortField="fee"
@@ -112,25 +122,29 @@ const TxsTable = ({
                   { `Fee${ feeCurrency }` }
                 </TableColumnHeaderSortable>
               ) : (
-                <TableColumnHeader width="20%" isNumeric pr={ 5 }>Fee</TableColumnHeader>
+                <TableColumnHeader width={ baseWidth } isNumeric pr={ 5 }>Fee</TableColumnHeader>
               )
             ) }
           </TableRow>
         </TableHeaderComponent>
         <TableBody>
           { socketType && <TxsSocketNotice type={ socketType } place="table" isLoading={ isLoading }/> }
-          { txs.slice(0, renderedItemsNum).map((item, index) => (
-            <TxsTableItem
-              key={ item.hash + (isLoading ? index : '') }
-              tx={ item }
-              showBlockInfo={ showBlockInfo }
-              currentAddress={ currentAddress }
-              enableTimeIncrement={ enableTimeIncrement }
-              isLoading={ isLoading }
-              animation={ initialList.getAnimationProp(item) }
-              chainData={ chainData }
-            />
-          )) }
+          { txs.slice(0, renderedItemsNum).map((item, index) => {
+            return (
+              <TxsTableItem
+                key={ item.hash + (isLoading ? index : '') }
+                tx={ item }
+                showBlockInfo={ showBlockInfo }
+                currentAddress={ currentAddress }
+                enableTimeIncrement={ enableTimeIncrement }
+                isLoading={ isLoading }
+                animation={ initialList.getAnimationProp(item) }
+                chainData={ chainData }
+                translationIsLoading={ translationQuery?.isLoading }
+                translationData={ translationQuery?.data?.find(({ txHash }) => txHash.toLowerCase() === item.hash.toLowerCase()) }
+              />
+            );
+          }) }
         </TableBody>
       </TableRoot>
       <div ref={ cutRef }/>
